@@ -1,0 +1,142 @@
+
+
+.melingo-popup {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    max-width: 350px;
+    min-width: 280px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    border: 1px solid #404040;
+    z-index: 9999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.melingo-popup-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.melingo-popup-content {
+    padding: 20px;
+}
+
+.melingo-popup-icon {
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.melingo-popup-message {
+    font-size: 16px;
+    line-height: 1.4;
+    color: #ffffff;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.melingo-popup-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.melingo-popup-btn {
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.melingo-popup-btn-primary {
+    flex: 1;
+    padding: 10px 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.melingo-popup-btn-primary:hover {
+    background: #f0f0f0;
+    transform: translateY(-1px);
+}
+
+.melingo-popup-btn-close {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: #404040;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.melingo-popup-btn-close:hover {
+    background: #606060;
+    color: #ffffff;
+}
+
+/* Trigger type variations */
+.melingo-popup-discount {
+    border-left: 4px solid #ffffff;
+}
+
+.melingo-popup-urgency {
+    border-left: 4px solid #ff6b6b;
+}
+
+.melingo-popup-help {
+    border-left: 4px solid #74b9ff;
+}
+
+.melingo-popup-recommendation {
+    border-left: 4px solid #00cec9;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .melingo-popup {
+        left: 20px;
+        right: 20px;
+        bottom: 80px;
+        max-width: none;
+    }
+    
+    .melingo-popup-message {
+        font-size: 15px;
+    }
+    
+    .melingo-popup-btn-primary {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+}
+
+/* Animation for different states */
+@keyframes melingoSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.melingo-popup-visible {
+    animation: melingoSlideIn 0.3s ease-out;
+}
