@@ -13,6 +13,15 @@ Melingo analyzes user session data in real-time and leverages OpenAI's LLM to de
 - **AI**: OpenAI GPT-3.5-turbo for intelligent decision making
 
 ## 🚀 Setup Instructions
+### 1. Backend Setup (local)
+
+```bash
+cd backend
+
+pip install -r requirements.txt
+
+python .\run_local.py
+
 
 ### 1. Backend Setup (Modal)
 
@@ -48,10 +57,20 @@ The frontend consists of three files in the `frontend/` directory:
 Add this code to `layout/theme.liquid` before the closing `</head>` tag:
 
 ```html
+<!-- For LOCAL DEVELOPMENT -->
+<script>
+  window.MELINGO_API_URL = 'http://localhost:8000';
+  window.MELINGO_DEBUG = true;
+</script>
+
+<!-- For PRODUCTION (uncomment below and comment above) -->
+<!--
 <script>
   window.MELINGO_API_URL = 'https://your-modal-app-url.modal.run';
   window.MELINGO_DEBUG = false;
 </script>
+-->
+
 {{ 'melingo-popup.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'melingo-popup.js' | asset_url }}" defer></script>
 <script src="{{ 'melingo-tracker.js' | asset_url }}" defer></script>
