@@ -1,6 +1,5 @@
 """
-Melingo Shopify Engagement System - FastAPI Server
-AI-powered e-commerce engagement system
+Melingo Shopify Engagement System - Local FastAPI Server
 """
 
 from fastapi import FastAPI, Request
@@ -13,13 +12,12 @@ from datetime import datetime
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
-# In-memory storage for sessions
+# In-memory session store (for production, consider using Redis or a database)
 sessions_store: Dict[str, Dict] = {}
 
-# Pydantic models
 class TrackingEvent(BaseModel):
     session_id: str
     event_type: str
@@ -37,11 +35,7 @@ class AIResponse(BaseModel):
     trigger_type: Optional[str] = None
 
 # Create FastAPI app
-app = FastAPI(
-    title="Melingo Engagement API",
-    description="AI-powered e-commerce engagement system",
-    version="1.0.0"
-)
+app = FastAPI(title="Melingo Engagement API", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
@@ -52,12 +46,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-
 @app.get("/health")
 async def health_check():
+    """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 @app.post("/track")
@@ -79,9 +70,12 @@ async def track_event(request: Request):
         sessions_store[session_id]["events"].append(event_data)
         sessions_store[session_id]["last_activity"] = time.time()
         
+        print(f"📊 Tracked event for session {session_id}: {event_data.get('event_type')}")
+        
         return {"status": "success", "session_id": session_id}
         
     except Exception as e:
+        print(f"❌ Track event error: {e}")
         return {"error": str(e)}
 
 @app.post("/analyze")
@@ -98,6 +92,8 @@ async def analyze_session(request: Request):
         session_data = sessions_store[session_id]
         events = session_data["events"]
         
+        print(f"🔍 Analyzing session {session_id} with {len(events)} events")
+        
         analysis = analyze_session_behavior(events)
         ai_response = get_ai_decision(analysis)
         
@@ -108,25 +104,18 @@ async def analyze_session(request: Request):
         }
         
     except Exception as e:
+        print(f"❌ Analyze session error: {e}")
         return {
             "should_show_message": True,
             "message": "Thanks for browsing! Get 15% off your first order!",
             "trigger_type": "discount"
         }
 
-@app.get("/sessions")
-async def get_sessions():
-    """Debug endpoint to see all sessions"""
-    return {
-        "total_sessions": len(sessions_store),
-        "sessions": {k: {"events_count": len(v["events"]), "last_activity": v["last_activity"]} 
-                    for k, v in sessions_store.items()}
-    }
-
 def analyze_session_behavior(events: List[Dict]) -> Dict:
     """Analyze session behavior patterns"""
     if not events:
         return {}
+        
     page_views = [e for e in events if e["event_type"] == "page_view"]
     clicks = [e for e in events if e["event_type"] == "click"]
     cart_actions = [e for e in events if e["event_type"] == "add_to_cart"]
@@ -146,22 +135,25 @@ def analyze_session_behavior(events: List[Dict]) -> Dict:
         "cart_page_views": len(cart_pages),
         "current_page": events[-1].get("page_type", "unknown"),
         "has_cart_items": len(cart_actions) > 0,
-        "events": events[-5:]  
+        "events": events[-5:]  # Last 5 events
     }
     
+    print(f"📈 Session analysis: {analysis}")
     return analysis
 
 def get_ai_decision(analysis: Dict) -> AIResponse:
     """Use OpenAI to decide if and what message to show"""
     
     try:
-        from openai import OpenAI
-
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
+        # Check if OpenAI API key is available
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            print("⚠️  No OpenAI API key found, using fallback decision")
             return get_fallback_decision(analysis)
-
-        client = OpenAI(api_key=api_key)
+        
+        from openai import OpenAI
+        
+        client = OpenAI(api_key=openai_api_key)
         
         prompt = f"""
 You are an AI assistant helping an e-commerce store engage customers at the right moment.
@@ -204,6 +196,8 @@ Respond in JSON format:
         
         ai_text = response.choices[0].message.content
         
+        print(f"🤖 OpenAI Response: {ai_text}")
+        
         if "should_show_message\": true" in ai_text:
             import re
             message_match = re.search(r'"message":\s*"([^"]+)"', ai_text)
@@ -212,16 +206,22 @@ Respond in JSON format:
             message = message_match.group(1) if message_match else "Special offer just for you!"
             trigger_type = trigger_match.group(1) if trigger_match else "discount"
             
+            print(f"✅ Parsed - Message: '{message}', Trigger: '{trigger_type}'")
+            
             return AIResponse(
                 should_show_message=True,
                 message=message,
                 trigger_type=trigger_type
             )
         else:
+            print("❌ OpenAI said not to show message")
             return AIResponse(should_show_message=False)
             
     except Exception as e:
-        return get_fallback_decision(analysis)
+        print(f"❌ AI decision error: {e}")
+        fallback_response = get_fallback_decision(analysis)
+        print(f"🔄 Using fallback: {fallback_response.message}")
+        return fallback_response
 
 def get_fallback_decision(analysis: Dict) -> AIResponse:
     """Fallback decision logic if AI fails"""
@@ -247,7 +247,17 @@ def get_fallback_decision(analysis: Dict) -> AIResponse:
     
     return AIResponse(should_show_message=False)
 
-# Run the server
+# Add a startup event to show server info
+@app.on_event("startup")
+async def startup_event():
+    print("🚀 Melingo Engagement API started successfully!")
+    print("📝 API Documentation: http://localhost:8000/docs")
+    print("🔍 Health Check: http://localhost:8000/health")
+    print("📊 Track endpoint: http://localhost:8000/track")
+    print("🤖 Analyze endpoint: http://localhost:8000/analyze")
+
 if __name__ == "__main__":
     import uvicorn
+    
+    print("🚀 Starting Melingo Engagement API...")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
