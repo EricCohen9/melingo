@@ -12,32 +12,17 @@ from datetime import datetime
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# In-memory session store (for production, consider using Redis or a database)
 sessions_store: Dict[str, Dict] = {}
-
-class TrackingEvent(BaseModel):
-    session_id: str
-    event_type: str
-    page_type: Optional[str] = None
-    page_url: str
-    timestamp: float
-    data: Optional[Dict[str, Any]] = None
-
-class AnalyzeRequest(BaseModel):
-    session_id: str
 
 class AIResponse(BaseModel):
     should_show_message: bool
     message: Optional[str] = None
     trigger_type: Optional[str] = None
 
-# Create FastAPI app
 app = FastAPI(title="Melingo Engagement API", version="1.0.0")
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -226,8 +211,6 @@ Respond in JSON format:
 def get_fallback_decision(analysis: Dict) -> AIResponse:
     """Fallback decision logic if AI fails"""
     
-    duration = analysis.get('session_duration', 0)
-    product_views = analysis.get('product_page_views', 0)
     has_cart = analysis.get('has_cart_items', False)
     total_events = analysis.get('total_events', 0)
     
@@ -247,7 +230,6 @@ def get_fallback_decision(analysis: Dict) -> AIResponse:
     
     return AIResponse(should_show_message=False)
 
-# Add a startup event to show server info
 @app.on_event("startup")
 async def startup_event():
     print("🚀 Melingo Engagement API started successfully!")
